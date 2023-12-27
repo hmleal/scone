@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"sync"
 	"time"
@@ -14,15 +16,26 @@ type Scoop struct {
 	buckets []string
 }
 
-func NewScoop() Scoop {
+func NewScoop() (Scoop, error) {
+	userPath, err := os.UserHomeDir()
+	if err != nil {
+		return Scoop{}, errors.New("Can't find user home directory")
+	}
+
+	scoopPath := fmt.Sprintf("%s\\Scoop", userPath)
+
+	if _, err := os.Stat(scoopPath); os.IsNotExist(err) {
+		return Scoop{}, errors.New("Can't find scoop directory")
+	}
+
 	return Scoop{
-		path: "C:\\Users\\Henrique Leal\\Scoop",
+		path: scoopPath,
 		buckets: []string{
 			"buckets\\main",
 			"buckets\\nerd-fonts",
 			"buckets\\games",
 		},
-	}
+	}, nil
 }
 
 func RunCmd(value string) {
@@ -51,7 +64,7 @@ func RunCommands(s *Scoop) {
 }
 
 func main() {
-	scoop := NewScoop()
+	scoop, _ := NewScoop()
 
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
 	s.Suffix = " thinking..."
