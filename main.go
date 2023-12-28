@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -22,19 +23,28 @@ func NewScoop() (Scoop, error) {
 		return Scoop{}, errors.New("Can't find user home directory")
 	}
 
-	scoopPath := fmt.Sprintf("%s\\Scoop", userPath)
+	scoopPath := filepath.Join(userPath, "Scoop")
 
 	if _, err := os.Stat(scoopPath); os.IsNotExist(err) {
 		return Scoop{}, errors.New("Can't find scoop directory")
 	}
 
+	buckets, err := os.ReadDir(filepath.Join(scoopPath, "buckets"))
+	if err != nil {
+		return Scoop{}, errors.New("Can't find buckets directory")
+	}
+
+	var enabledBuckets []string
+	for _, b := range buckets {
+		if !b.IsDir() {
+			continue
+		}
+		enabledBuckets = append(enabledBuckets, filepath.Join("buckets", b.Name()))
+	}
+
 	return Scoop{
-		path: scoopPath,
-		buckets: []string{
-			"buckets\\main",
-			"buckets\\nerd-fonts",
-			"buckets\\games",
-		},
+		path:    scoopPath,
+		buckets: enabledBuckets,
 	}, nil
 }
 
@@ -56,7 +66,7 @@ func RunCommands(s *Scoop) {
 		value := value
 		go func() {
 			defer wg.Done()
-			RunCmd(fmt.Sprintf("%s\\%s", s.path, value))
+			RunCmd(filepath.Join(s.path, value))
 		}()
 	}
 
@@ -67,7 +77,7 @@ func main() {
 	scoop, _ := NewScoop()
 
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
-	s.Suffix = " thinking..."
+	s.Suffix = " Updating Scone..."
 	s.FinalMSG = "Scone was update successfully!"
 	s.Color("blue")
 
@@ -75,5 +85,5 @@ func main() {
 	s.Start()
 	RunCommands(&scoop)
 	s.Stop()
-	fmt.Printf("\nTotal of seconds: %v", time.Since(start))
+	fmt.Printf("\n\nTotal of seconds: %v\n\n", time.Since(start))
 }
