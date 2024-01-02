@@ -1,56 +1,18 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"sync"
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/hmleal/scone/scoop"
 )
 
-type Scoop struct {
-	path    string
-	buckets []string
-}
-
-func NewScoop() (Scoop, error) {
-	userPath, err := os.UserHomeDir()
-	if err != nil {
-		return Scoop{}, errors.New("Can't find user home directory")
-	}
-
-	scoopPath := filepath.Join(userPath, "Scoop")
-
-	if _, err := os.Stat(scoopPath); os.IsNotExist(err) {
-		return Scoop{}, errors.New("Can't find scoop directory")
-	}
-
-	buckets, err := os.ReadDir(filepath.Join(scoopPath, "buckets"))
-	if err != nil {
-		return Scoop{}, errors.New("Can't find buckets directory")
-	}
-
-	var enabledBuckets []string
-	for _, b := range buckets {
-		if !b.IsDir() {
-			continue
-		}
-		enabledBuckets = append(enabledBuckets, filepath.Join("buckets", b.Name()))
-	}
-
-	return Scoop{
-		path:    scoopPath,
-		buckets: enabledBuckets,
-	}, nil
-}
-
-func RunCmd(value string) {
-	cmd := exec.Command("powershell", "git", "pull")
-	cmd.Dir = value
+func RunCommand(command scoop.Command) {
+	cmd := exec.Command("powershell", command.Options)
+	cmd.Dir = command.Directory
 
 	_, err := cmd.Output()
 	if err != nil {
@@ -58,15 +20,15 @@ func RunCmd(value string) {
 	}
 }
 
-func RunCommands(s *Scoop) {
+func RunCommands(cmds []scoop.Command) {
 	wg := sync.WaitGroup{}
 
-	for _, value := range s.buckets {
+	for _, cmd := range cmds {
 		wg.Add(1)
-		value := value
+		cmd := cmd
 		go func() {
 			defer wg.Done()
-			RunCmd(filepath.Join(s.path, value))
+			RunCommand(cmd)
 		}()
 	}
 
@@ -74,7 +36,7 @@ func RunCommands(s *Scoop) {
 }
 
 func main() {
-	scoop, _ := NewScoop()
+	scoop, _ := scoop.NewScoop()
 
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
 	s.Suffix = " Updating Scone..."
@@ -83,7 +45,7 @@ func main() {
 
 	start := time.Now()
 	s.Start()
-	RunCommands(&scoop)
+	RunCommands(scoop.UpdateBuckets())
 	s.Stop()
 	fmt.Printf("\n\nTotal of seconds: %v\n\n", time.Since(start))
 }
