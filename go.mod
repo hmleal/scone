@@ -2,12 +2,18 @@ module github.com/hmleal/scone
 
 go 1.21.5
 
-require github.com/briandowns/spinner v1.23.0
+require (
+	github.com/chelnak/ysmrr v0.4.0
+	github.com/urfave/cli/v2 v2.27.5
+)
 
 require (
-	github.com/fatih/color v1.16.0 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
+	github.com/fatih/color v1.18.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/term v0.15.0 // indirect
+	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/stretchr/testify v1.9.0 // indirect
+	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
+	golang.org/x/sys v0.27.0 // indirect
 )
